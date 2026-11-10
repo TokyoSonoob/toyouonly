@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#fff2f6">
+  <title>กลับชุมพรวันไหน?</title>
+  <style>
+    :root {
+      --pink: #e985a4;
+      --pink-dark: #cc6487;
+      --pink-light: #fff0f5;
+      --ink: #69495a;
+      --muted: #aa8797;
+      --line: #f2dce4;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0;
+      padding: 20px 14px;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      font-family: "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif;
+      background:
+        radial-gradient(circle at 12% 12%, #fff 0 3%, transparent 24%),
+        radial-gradient(circle at 90% 85%, #ffe0eb 0 3%, transparent 25%),
+        linear-gradient(135deg, #fffaf6, #fff0f5 55%, #f9eff8);
+    }
+
+    button { font: inherit; }
+
+    .card {
+      width: min(100%, 470px);
+      padding: clamp(22px, 5vw, 34px);
+      border: 1px solid rgba(255,255,255,.95);
+      border-radius: 28px;
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 22px 65px rgba(181,107,137,.16);
+    }
+
+    h1 {
+      margin: 0 0 22px;
+      color: #714b60;
+      text-align: center;
+      font-size: clamp(25px, 6vw, 32px);
+      line-height: 1.4;
+    }
+
+    .calendar {
+      padding: 17px;
+      border: 1px solid var(--line);
+      border-radius: 21px;
+      background: #fffafb;
+    }
+
+    .month {
+      margin-bottom: 16px;
+      color: #795269;
+      text-align: center;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .weekdays, .days {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .weekdays { margin-bottom: 8px; }
+
+    .weekday {
+      padding: 4px 0;
+      color: #b18b9c;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .day, .blank {
+      min-width: 0;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+    }
+
+    .day {
+      border: 1px solid transparent;
+      background: #fff;
+      color: #78566a;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .16s ease;
+    }
+
+    .day:not(:disabled):hover {
+      border-color: #f1b5c9;
+      background: var(--pink-light);
+      transform: translateY(-2px);
+    }
+
+    .day:disabled {
+      color: #d9cbd1;
+      background: #faf7f8;
+      cursor: not-allowed;
+    }
+
+    .day.today {
+      border-color: #eaa7bd;
+      color: var(--pink-dark);
+      background: #fff4f7;
+    }
+
+    .day.selected {
+      border-color: var(--pink);
+      color: white;
+      background: linear-gradient(145deg, #f2a1b9, #df7698);
+      box-shadow: 0 5px 13px rgba(226,119,156,.23);
+    }
+
+    .confirm {
+      display: none;
+      width: 100%;
+      min-height: 46px;
+      margin-top: 14px;
+      border: 0;
+      border-radius: 14px;
+      color: #fff;
+      background: linear-gradient(135deg, #f1a0b7, #df7698);
+      box-shadow: 0 7px 17px rgba(226,119,156,.2);
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .confirm.show { display: block; }
+    .confirm:hover { filter: brightness(1.03); }
+
+    .result {
+      display: none;
+      margin-top: 15px;
+      padding: 17px 12px;
+      border: 1px solid #f4d3df;
+      border-radius: 17px;
+      background: var(--pink-light);
+      color: #bd5f82;
+      text-align: center;
+      font-size: clamp(17px, 4.5vw, 20px);
+      font-weight: 800;
+      line-height: 1.6;
+      animation: appear .25s ease both;
+    }
+
+    .result.show { display: block; }
+
+    @keyframes appear {
+      from { opacity: 0; transform: translateY(7px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .welcome {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(91,54,73,.2);
+      backdrop-filter: blur(7px);
+      -webkit-backdrop-filter: blur(7px);
+      transition: opacity .22s ease, visibility .22s ease;
+    }
+
+    .welcome.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .welcome-card {
+      width: min(100%, 360px);
+      padding: 29px 22px;
+      border: 1px solid white;
+      border-radius: 25px;
+      background: #fffafb;
+      box-shadow: 0 22px 65px rgba(111,64,85,.22);
+      text-align: center;
+    }
+
+    .welcome-card h2 {
+      margin: 0 0 22px;
+      color: #71485d;
+      font-size: 22px;
+    }
+
+    .button-zone {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+    }
+
+    .answer {
+      min-height: 43px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .yes {
+      color: #fff;
+      background: linear-gradient(135deg, #f1a0b7, #df7698);
+      box-shadow: 0 6px 15px rgba(226,119,156,.23);
+    }
+
+    .no {
+      color: #a77c90;
+      border: 1px solid #f3dce5;
+      background: #fff0f5;
+    }
+
+    button:focus-visible {
+      outline: 3px solid rgba(226,119,156,.38);
+      outline-offset: 3px;
+    }
+
+    @media (max-width: 380px) {
+      .card { padding: 20px 14px; }
+      .calendar { padding: 13px 9px; }
+      .weekdays, .days { gap: 4px; }
+      .day, .blank { border-radius: 9px; }
+      .answer { padding: 0 12px; font-size: 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>กลับชุมพรวันไหน?</h1>
+
+    <section class="calendar" aria-label="เลือกวันที่กลับ">
+      <div class="month" id="monthTitle"></div>
+      <div class="weekdays" aria-hidden="true">
+        <div class="weekday">อา</div>
+        <div class="weekday">จ</div>
+        <div class="weekday">อ</div>
+        <div class="weekday">พ</div>
+        <div class="weekday">พฤ</div>
+        <div class="weekday">ศ</div>
+        <div class="weekday">ส</div>
+      </div>
+      <div class="days" id="calendarDays"></div>
+    </section>
+
+    <button class="confirm" id="confirmButton" type="button">ตกลง</button>
+    <div class="result" id="result" aria-live="polite"></div>
+  </main>
+
+  <section class="welcome" id="welcome" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+    <div class="welcome-card">
+      <h2 id="welcomeTitle">จะกลับชุมพรไหม?</h2>
+      <div class="button-zone">
+        <button class="answer yes" id="yesButton" type="button">กลับแน่นอน</button>
+        <button class="answer no" id="noButton" type="button">ไม่อยากกลับแล้ว</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (() => {
+      const months = [
+        "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+      ];
+
+      const today = new Date();
+      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const year = todayDate.getFullYear();
+      const month = todayDate.getMonth();
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const firstDay = new Date(year, month, 1).getDay();
+
+      const monthTitle = document.getElementById("monthTitle");
+      const calendarDays = document.getElementById("calendarDays");
+      const confirmButton = document.getElementById("confirmButton");
+      const result = document.getElementById("result");
+      const welcome = document.getElementById("welcome");
+      const yesButton = document.getElementById("yesButton");
+      const noButton = document.getElementById("noButton");
+
+      let selectedDate = null;
+
+      monthTitle.textContent = `${months[month]} ${year + 543}`;
+
+      for (let i = 0; i < firstDay; i++) {
+        const blank = document.createElement("div");
+        blank.className = "blank";
+        calendarDays.appendChild(blank);
+      }
+
+      for (let day = 1; day <= lastDay; day++) {
+        const date = new Date(year, month, day);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "day";
+        button.textContent = day;
+        button.setAttribute("aria-label", `${day} ${months[month]} ${year + 543}`);
+
+        if (date < todayDate) {
+          button.disabled = true;
+        } else {
+          if (date.getTime() === todayDate.getTime()) button.classList.add("today");
+          button.addEventListener("click", () => {
+            selectedDate = date;
+            document.querySelectorAll(".day.selected").forEach(item => item.classList.remove("selected"));
+            button.classList.add("selected");
+            result.classList.remove("show");
+            confirmButton.classList.add("show");
+          });
+        }
+
+        calendarDays.appendChild(button);
+      }
+
+      confirmButton.addEventListener("click", () => {
+        if (!selectedDate) return;
+
+        const daysLeft = Math.round((selectedDate.getTime() - todayDate.getTime()) / 86400000);
+        result.textContent = daysLeft > 5
+          ? "รอไม่ไหวแล้ว คิดถึง"
+          : "เย้ๆ รีบกลับมานะ รออยู่";
+
+        result.classList.remove("show");
+        void result.offsetWidth;
+        result.classList.add("show");
+        confirmButton.classList.remove("show");
+      });
+
+      yesButton.addEventListener("click", () => welcome.classList.add("hide"));
+
+      function moveNoButton() {
+        const margin = 12;
+        const rect = noButton.getBoundingClientRect();
+        const maxX = Math.max(margin, window.innerWidth - rect.width - margin);
+        const maxY = Math.max(margin, window.innerHeight - rect.height - margin);
+        const x = margin + Math.random() * (maxX - margin);
+        const y = margin + Math.random() * (maxY - margin);
+
+        noButton.style.position = "fixed";
+        noButton.style.left = `${x}px`;
+        noButton.style.top = `${y}px`;
+        noButton.style.margin = "0";
+      }
+
+      noButton.addEventListener("pointerenter", moveNoButton);
+      noButton.addEventListener("click", event => {
+        event.preventDefault();
+        moveNoButton();
+      });
+      noButton.addEventListener("touchstart", event => {
+        event.preventDefault();
+        moveNoButton();
+      }, { passive: false });
+    })();
+  </script>
+</body>
+</html>
